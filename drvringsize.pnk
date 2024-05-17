@@ -1,0 +1,51 @@
+var RING_SIZE = 512;
+
+// Constant for system size (default 64 bit)
+
+var SYS_SIZE = 64;
+
+//Pointer size
+
+var PTR_SIZE = 64;
+
+
+// Initialise the shared ring buffer
+// @param ring- address to ring handle to use
+// @param avail- pointer to avail ring in shared memory
+// @param used- pointer to used ring in shared memory
+// @param notify- function pointer used to notify the other user
+// @param buffer_init- 1 indicates the read and write indices in shared memory 
+                         need to be initialised
+                       0 indicates they do not. Only one side of the shared memory 
+                         regions needs to do this
+
+
+fun ring_init(1 ring, 1 avail, 1 used, 1 notify, 1 buffer_init) {
+
+    // Offsets for ring_handle
+
+    var used_off = 0;
+    var avail_off = PTR_SIZE;
+    var notify_off = 2 * PTR_SIZE;
+
+    !stw    used , ring;
+    !stw    avail , ring + avail_off;              // Offset for avail_ring ptr
+    !stw    notify , ring + notify_off;            // Offset for notify
+
+    if buffer_init == 1 {
+
+        // Offsets for ring_buffer
+
+        var write_idx = 0;
+        var read_idx = 32;
+
+        !st8    0 , ring;                          // ring -> used_ring -> write_idx = 0
+        !st8    0 , ring + read_idx;               // ring -> used_ring -> read_idx = 0
+        !st8    0 , ring + avail_off + write_idx;  // ring -> avail_ring -> write_idx = 0
+        !st8    0 , ring + avail_off + read_idx;   // ring -> avail_ring -> read_idx = 0
+    }
+
+}
+
+
+fun ring_empty()

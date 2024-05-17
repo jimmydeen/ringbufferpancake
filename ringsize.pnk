@@ -1,0 +1,39 @@
+// c: specifies {used|avail}_ring
+// p: stores address of ring handler struct
+fun drv_ring_size(1 c, 8 p) {
+    // Why ldb and not lds 1 since c is a word?
+    var ring = ldb c;
+    var size = 0;
+
+    // handle_addr stores tx_ring_drv->used_ring (or avail_ring)
+    var handle_addr = lds 1 ldb p + ring;
+
+    // Temporarily store write_idx, read_idx here
+    var write_idx = @base + 200;
+    var read_idx = @base + 208;
+
+    // Zeroing out remaining bytes
+    strb write_idx,     ldb handle_addr;
+    strb write_idx + 1, ldb handle_addr + 1;
+    strb write_idx + 2, ldb handle_addr + 2;
+    strb write_idx + 3, ldb handle_addr + 3;
+    strb write_idx + 4, 0;
+    strb write_idx + 5, 0;
+    strb write_idx + 6, 0;
+    strb write_idx + 7, 0;
+
+    strb read_idx,     ldb handle_addr + 4;
+    strb read_idx + 1, ldb handle_addr + 5;
+    strb read_idx + 2, ldb handle_addr + 6;
+    strb read_idx + 3, ldb handle_addr + 7;
+    strb read_idx + 4, 0;
+    strb read_idx + 5, 0;
+    strb read_idx + 6, 0;
+    strb read_idx + 7, 0;
+
+    if write_idx - read_idx < 0 {
+        return -1;
+    }
+
+    return lds 1 write_idx - lds 1 read_idx;
+}
