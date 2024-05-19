@@ -1,4 +1,6 @@
 var RING_SIZE = 512;
+var 64BBYTES = 8; // Bits to Bytes
+var 32BBYTES = 4;
 
 // Constant for system size (default 64 bit)
 
@@ -7,6 +9,17 @@ var SYS_SIZE = 64;
 //Pointer size
 
 var PTR_SIZE = 64;
+
+// Offsets for ring_handle struct (members 64 bit)
+
+var USED_OFF = 0;
+var AVAIL_OFF = 64BBYTES;
+var NOTIFY_OFF = 2 * 64BBYTES;
+
+// Offsets for ring_buffer struct
+
+var WRITE_IDX = 0;
+var READ_IDX = 32;
 
 
 // Initialise the shared ring buffer
@@ -22,30 +35,41 @@ var PTR_SIZE = 64;
 
 fun ring_init(1 ring, 1 avail, 1 used, 1 notify, 1 buffer_init) {
 
-    // Offsets for ring_handle
 
-    var used_off = 0;
-    var avail_off = PTR_SIZE;
-    var notify_off = 2 * PTR_SIZE;
-
-    !stw    used , ring;
-    !stw    avail , ring + avail_off;              // Offset for avail_ring ptr
-    !stw    notify , ring + notify_off;            // Offset for notify
+    !stw    used , ring + USED_OFF;                // Offset for used_ring ptr
+    !stw    avail , ring + AVAIL_OFF;              // Offset for avail_ring ptr
+    !stw    notify , ring + NOTIFY_OFF;            // Offset for notify
 
     if buffer_init == 1 {
 
-        // Offsets for ring_buffer
-
-        var write_idx = 0;
-        var read_idx = 32;
-
-        !st8    0 , ring;                          // ring -> used_ring -> write_idx = 0
-        !st8    0 , ring + read_idx;               // ring -> used_ring -> read_idx = 0
-        !st8    0 , ring + avail_off + write_idx;  // ring -> avail_ring -> write_idx = 0
-        !st8    0 , ring + avail_off + read_idx;   // ring -> avail_ring -> read_idx = 0
+        !st8    0 , used + WRITE_IDX;               // ring -> used_ring -> write_idx = 0
+        !st8    0 , used + WRITE_IDX + 1;
+        !st8    0 , used + WRITE_IDX + 2;
+        !st8    0 , used + WRITE_IDX + 3;
+        !st8    0 , used + READ_IDX;                // ring -> used_ring -> read_idx = 0
+        !st8    0 , used + READ_IDX + 1;
+        !st8    0 , used + READ_IDX + 2;
+        !st8    0 , used + READ_IDX + 3;
+        !st8    0 , avail + WRITE_IDX;              // ring -> avail_ring -> write_idx = 0
+        !st8    0 , avail + WRITE_IDX + 1;
+        !st8    0 , avail + WRITE_IDX + 2;
+        !st8    0 , avail + WRITE_IDX + 3;
+        !st8    0 , avail + READ_IDX;               // ring -> avail_ring -> read_idx = 0
+        !st8    0 , avail + READ_IDX + 1;
+        !st8    0 , avail + READ_IDX + 2;
+        !st8    0 , avail + READ_IDX + 3;
     }
 
 }
 
+fun ring_empty(1 ring) {
 
-fun ring_empty()
+    !ld
+
+}
+
+fun ring_size(1 ring) {
+    
+    
+
+}
