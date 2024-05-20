@@ -1,6 +1,7 @@
 var RING_SIZE = 512;
 var 64BBYTES = 8; // Bits to Bytes
 var 32BBYTES = 4;
+var BYTE = 8; // for shifting
 
 // Constant for system size (default 64 bit)
 
@@ -10,16 +11,16 @@ var SYS_SIZE = 64;
 
 var PTR_SIZE = 64;
 
-// Offsets for ring_handle struct (members 64 bit)
+// Offsets for ring_handle struct (64 bit members)
 
 var USED_OFF = 0;
 var AVAIL_OFF = 64BBYTES;
 var NOTIFY_OFF = 2 * 64BBYTES;
 
-// Offsets for ring_buffer struct
+// Offsets for ring_buffer struct (32 bit members)
 
 var WRITE_IDX = 0;
-var READ_IDX = 32;
+var READ_IDX = 32BBYTES;
 
 
 // Initialise the shared ring buffer
@@ -70,6 +71,84 @@ fun ring_empty(1 ring) {
 
 fun ring_size(1 ring) {
     
+    var write_idx = 0;
+    var read_idx = 0;
+
+    write_idx = 
+
+}
+
+// Helper function that:
+// Loads write_idx from param ring buffer -> uses heapAddr to store write_idx -> returns write_idx
+// Responsibility is on caller to provide valid heapAddr (needs 8 bytes usable), clear heapAddr after using return val.
+fun get_write_idx(1 ring_buf, 1 heapAddr) {
     
+    // init temporary
+
+    var write_idx = 0;
+    var temp = 0;
+
+    // Store from ring_buf + buffer with zeros for ldw op
+    //
+    //st8 ring_buf + WRITE_IDX , heapAddr;
+    //st8 ring_buf + WRITE_IDX + 1 , heapAddr + 1;
+    //st8 ring_buf + WRITE_IDX + 2 , heapAddr + 2;
+    //st8 ring_buf + WRITE_IDX + 3 , heapAddr + 3;
+    //st8 0 , heapAddr + 4;
+    //st8 0 , heapAddr + 5; 
+    //st8 0 , heapAddr + 6;
+    //st8 0 , heapAddr + 7;
+
+    //ldw write_idx , heapAddr;
+    
+    st8 ring_buf + WRITE_IDX + 3 , temp;
+    write_idx = write_idx | (temp << 3 * BYTE);
+    st8 ring_buf + WRITE_IDX + 2 , temp;  
+    write_idx = write_idx | (temp << 2 * BYTE);
+    st8 ring_buf + WRITE_IDX + 1 , temp;
+    write_idx = write_idx | (temp << BYTE);
+    st8 ring_buf + WRITE_IDX , temp;
+    write_idx = write_idx | temp;
+
+    return write_idx;
+}
+
+
+fun get_read_idx(1 ring) {
+
+    // init temporary
+
+    var read_idx = 0;
+
+    // Store from ring_buf + buffer with zeros for ldw op
+
+    st8 ring_buf + READ_IDX , heapAddr;
+    st8 ring_buf + READ_IDX + 1 , heapAddr + 1;
+    st8 ring_buf + READ_IDX + 2 , heapAddr + 2;
+    st8 ring_buf + READ_IDX + 3 , heapAddr + 3;
+    st8 0 , heapAddr + 4;
+    st8 0 , heapAddr + 5; 
+    st8 0 , heapAddr + 6;
+    st8 0 , heapAddr + 7;
+
+    ldw read_idx , heapAddr;
+
+    return read_idx;
+
+}
+
+// Returns ring -> used buffer 
+
+fun get_used(1 ring_handle) {
+    
+    return ring_handle + USED_OFF
+
+}
+
+// Returns ring -> available buffer
+
+fun get_avail(1 ring_handle) {
+
+    return ring_handle + AVAIL_OFF
 
 }
