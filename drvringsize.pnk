@@ -1,26 +1,20 @@
-var RING_SIZE = 512;
-var 64BBYTES = 8; // Bits to Bytes
-var 32BBYTES = 4;
-var BYTE = 8; // for shifting
+// RUN PREPROCESSOR FIRST BEFORE COMPILING ! (cpp <filename>)
 
-// Constant for system size (default 64 bit)
-
-var SYS_SIZE = 64;
-
-//Pointer size
-
-var PTR_SIZE = 64;
+// General macros
+#define 64BBYTES 8;
+#define 32BBYTES 4;
+#define BYTE 8;
 
 // Offsets for ring_handle struct (64 bit members)
 
-var USED_OFF = 0;
-var AVAIL_OFF = 64BBYTES;
-var NOTIFY_OFF = 2 * 64BBYTES;
+#define USED_OFF 0;
+#define AVAIL_OFF 64BBYTES;
+#define NOTIFY_OFF (2 * 64BBYTES);
 
 // Offsets for ring_buffer struct (32 bit members)
 
-var WRITE_IDX = 0;
-var READ_IDX = 32BBYTES;
+#define WRITE_IDX 0;
+#define READ_IDX 32BBYTES;
 
 
 // Initialise the shared ring buffer
@@ -87,26 +81,13 @@ fun get_write_idx(1 ring_buf, 1 heapAddr) {
 
     var write_idx = 0;
     var temp = 0;
-
-    // Store from ring_buf + buffer with zeros for ldw op
-    //
-    //st8 ring_buf + WRITE_IDX , heapAddr;
-    //st8 ring_buf + WRITE_IDX + 1 , heapAddr + 1;
-    //st8 ring_buf + WRITE_IDX + 2 , heapAddr + 2;
-    //st8 ring_buf + WRITE_IDX + 3 , heapAddr + 3;
-    //st8 0 , heapAddr + 4;
-    //st8 0 , heapAddr + 5; 
-    //st8 0 , heapAddr + 6;
-    //st8 0 , heapAddr + 7;
-
-    //ldw write_idx , heapAddr;
     
     st8 ring_buf + WRITE_IDX + 3 , temp;
-    write_idx = write_idx | (temp << 3 * BYTE);
+    write_idx = write_idx | (temp << 24);
     st8 ring_buf + WRITE_IDX + 2 , temp;  
-    write_idx = write_idx | (temp << 2 * BYTE);
+    write_idx = write_idx | (temp << 16);
     st8 ring_buf + WRITE_IDX + 1 , temp;
-    write_idx = write_idx | (temp << BYTE);
+    write_idx = write_idx | (temp << 8);
     st8 ring_buf + WRITE_IDX , temp;
     write_idx = write_idx | temp;
 
