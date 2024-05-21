@@ -4,6 +4,7 @@
 #define BBYTES64 8;
 #define BBYTES32 4;
 #define BYTE 8;
+#define BUFFSIZE 512;
 
 // Offsets for ring_handle struct (64 bit members)
 
@@ -57,15 +58,30 @@ fun ring_init(1 ring, 1 avail, 1 used, 1 notify, 1 buffer_init) {
 
 }
 
-//fun ring_empty(1 ring_buf) {
+fun ring_empty(1 ring_buf) {
 
-//    return !(ring_size(ring_buf))
+    var has_filled = 0;
 
-//}
+    // Mod ring size by BUFFSIZE -> 512 = 2^9
 
-//fun ring_full(1 ring) {
+    has_filled = mod_2_n(ring_size(ring_buf) , 9);
 
-//}
+    return !(has_filled);
+
+}
+
+fun ring_full(1 ring) {
+
+   var has_empty = 0;
+
+   // Mod ring size + 1 by BUFFSIZE-> 512 = 2^9
+
+   has_empty = mod_2_n(ring_size(ring_buf) + 1 , 9);
+
+   return !(has_empty);
+
+
+}
 
 fun ring_size(1 ring_buf) {
     
@@ -136,3 +152,25 @@ fun get_avail(1 ring_handle) {
     return ring_handle + AVAIL_OFF;
 
 }
+
+// Auxiliary Functions
+
+// Helper function that returns modulus of operand MOD 2^n 
+
+fun mod_2_n(1 operand, 1 n) {
+    
+    var power = 1;
+
+    // Get 2 ^ n
+
+    while n + 1 > 0 {
+        power = power << 1;
+        n = n - 1;
+    }
+
+    return a & (power - 1);
+
+}
+
+
+
