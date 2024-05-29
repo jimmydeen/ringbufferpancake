@@ -127,7 +127,7 @@ fun enqueue(1 ring_buf, 1 buffer, 1 len, 1 cookie_ptr) {
     // POSSIBLE REPLACE WITH BITSHIFTING BY 9
     // var 1 idx_mod_size = mod_2_n(curr_write_idx, LOGBUFFSIZE);
 
-    var 1 idx_mod_size = 1 << 10;                   // 2^9 = 512
+    var idx_mod_size = 1 << 10;                   // 2^9 = 512
     idx_mod_size = idx_mod_size - 1;                // 2^9 - 1 = 511
     idx_mod_size = curr_write_idx & idx_mod_size;   // idx % 512;
     
@@ -162,7 +162,7 @@ fun enqueue(1 ring_buf, 1 buffer, 1 len, 1 cookie_ptr) {
 
 */
 
-fun dequeue(1 ring_buf, 1 ) {
+fun dequeue(1 ring_buf, 1 addr_ptr, 1 len_ptr, 1 cookie_ptr) {
     
     var 1 empty = ring_empty(ring_buf);
 
@@ -173,15 +173,116 @@ fun dequeue(1 ring_buf, 1 ) {
     }
 
     var ring_buffers = ring_buf + BUFF_START;
+    var 1 curr_write_idx = get_write_idx(ring_buf);
 
-    var 1 idx_mod_size = 1 << 10;                   // 2^9 = 512
+    var idx_mod_size = 1 << 10;                   // 2^9 = 512
     idx_mod_size = idx_mod_size - 1;                // 2^9 - 1 = 511
     idx_mod_size = curr_write_idx & idx_mod_size;   // idx % 512
 
-    
-    
+    // NULL ADDRESS SHOULD BE?
 
+    var addr = 0;
+    var len = 0;
+    var cookie = 0;
+
+    !ldw addr, ring_buffers + idx_mod_size + ENCODED_ADDR;
+    !ldw len, ring_buffers + idx_mod_size + LEN;
+    !ldw cookie, ring_buffers + idx_mod_size + COOKIE;
+
+    !stw addr, addr_ptr;
+    !stw len, len_ptr;
+    !stw cookie, cookie_ptr;
+
+    //Thread Memory Release
+
+
+    // read_idx ++ 
+    inc_idx(ring_buf, 0);
+
+    return 0;
+
+}
+
+fun enqueue_avail(1 ring, 1 addr, 1 len, 1 cookie) {
+
+    if (addr == 0) {
+        raise Err addr == 0;
+    }
+
+    return enqueue(ring + AVAIL_OFF, addr, len, cookie);
+}
+
+fun enqueue_used(1 ring, 1 addr, 1 len, 1 cookie) {
+
+    if (addr == 0) {
+        raise Err addr == 0;
+    }
+
+    return enqueue(ring + USED_OFF, addr, len, cookie);
+
+}
+
+fun dequeue_avail(1 ring, 1 addr_ptr, 1 len_ptr, 1 cookie_ptr) {
     
+    return dequeue(ring + AVAIL_OFF, addr_ptr, len_ptr, cookie_ptr);
+
+}
+
+fun dequeue_used(1 ring, 1 addr_ptr, 1 len_ptr, 1 cookie_ptr) {
+    
+    return dequeue(ring + USED_OFF, addr_ptr, len_ptr, cookie_ptr);
+
+}
+
+/*
+    Dequeue element from ring buffer.
+
+    Dequeue intended for use by the driver, to collect pointer into this
+    buffer structure to be passed around as a cookie.
+
+    @param ring_buf - ring buffer to dequeue from
+    @param addr_ptr - pointer to address of where to store buffer address
+    @param len_ptr - pointer to variable to store length of data dequeueing
+    @param cookie_ptr - pointer to store a pointer to this particular buffer entry
+
+*/
+
+fun driver_dequeue(1 ring_buf, 1 addr_ptr, 1 len_ptr, 1 cookie_ptr) {
+
+    var 1 empty = ring_empty(ring_buf);
+
+    if (empty) {
+
+        return -1;
+
+    }
+
+
+    var ring_buffers = ring_buf + BUFF_START;
+    var 1 curr_write_idx = get_write_idx(ring_buf);
+
+    var idx_mod_size = 1 << 10;                   // 2^9 = 512
+    idx_mod_size = idx_mod_size - 1;                // 2^9 - 1 = 511
+    idx_mod_size = curr_write_idx & idx_mod_size;   // idx % 512
+
+    // NULL ADDRESS SHOULD BE?
+
+    var addr = 0;
+    var len = 0;
+    var cookie = ring_buffers + idx_mod_size;
+
+    !ldw addr, ring_buffers + idx_mod_size + ENCODED_ADDR;
+    !ldw len, ring_buffers + idx_mod_size + LEN;
+
+    !stw addr, addr_ptr;
+    !stw len, len_ptr;
+    !stw cookie, cookie_ptr;
+
+    //Thread Memory Release
+
+
+    // read_idx ++ 
+    inc_idx(ring_buf, 0);
 
     return 0;
 
