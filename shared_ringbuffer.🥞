@@ -83,7 +83,6 @@ fun ring_empty(1 ring_buf) {
 
 fun ring_full(1 ring_buf) {
 
-
     // Mod ring size + 1 by BUFFSIZE-> 512 = 2^9
 
     var 1 ring_size = ring_size(ring_buf);
@@ -100,6 +99,10 @@ fun ring_size(1 ring_buf) {
     var 1 write_idx = get_write_idx(ring_buf);
     var 1 read_idx = get_read_idx(ring_buf);
 
+    if (write_idx - read_idx < 0) {
+        raise Err (write_idx - read_idx < 0);
+    }
+
     return write_idx - read_idx;
 
 }
@@ -111,6 +114,10 @@ fun notify(1 ring_handle) {
 }
 
 fun enqueue(1 ring_buf, 1 buffer, 1 len, 1 cookie_ptr) {
+
+    if (buffer == 0) {
+        raise Err buffer == 0;
+    }
 
     var 1 full = ring_full(ring_buf);
     
@@ -186,6 +193,11 @@ fun dequeue(1 ring_buf, 1 addr_ptr, 1 len_ptr, 1 cookie_ptr) {
     var cookie = 0;
 
     !ldw addr, ring_buffers + idx_mod_size + ENCODED_ADDR;
+
+    if (addr == 0) {
+        raise Err addr == 0;
+    }
+
     !ldw len, ring_buffers + idx_mod_size + LEN;
     !ldw cookie, ring_buffers + idx_mod_size + COOKIE;
 
